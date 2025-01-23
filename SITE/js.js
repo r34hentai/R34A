@@ -1,6 +1,7 @@
 var container = document.getElementById("container")
 var pageNumber = document.getElementById('pageNumber');
 
+
 // Supported file types
 const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
 const videoExtensions = ['.mp4', '.webm', '.ogg', '.avi', '.mov', '.mkv'];
@@ -14,6 +15,18 @@ if (isMobile()) {
     imgDiv.remove();
     var mobile=true;
 }
+
+// Get presets
+var PresetW
+var PresetW
+fetch('./BLPreset.json')
+.then(response => {
+    return response.json(); // Parse the JSON data
+})
+.then(data => {
+    PresetW = data.W
+    PresetS = data.S
+})
 
 // search Tags logic
 var tags = ""
@@ -33,12 +46,21 @@ search.addEventListener('change', function (event) {
 // Blacklist tags Logic
 function negativeTagsLogic(){
     if (searchNegative.value) {
-        tagsNegative = searchNegative.value.split(' ') // Split the string by spaces
-            .map(word => `-${word}`) // Prefix each word with '-'
-            .join('+'); // Join the words with a '+'
+        if(searchNegative.value == "W"){
+            tagsNegative = PresetW;
+        } else if (searchNegative.value == "S"){
+            tagsNegative = PresetS;
+        } else{
+            tagsNegative = searchNegative.value;
+        }
+        searchNegative.value = tagsNegative;
+        tagsNegative = tagsNegative.split(' ') // Split the string by spaces
+                .map(word => `-${word}`) // Prefix each word with '-'
+                .join('+'); // Join the words with a '+'
     } else {
         tagsNegative = ""
     }
+    console.log(tagsNegative)
 }
 var searchNegative = document.getElementById('searchNegative');
 negativeTagsLogic()
@@ -110,6 +132,7 @@ function getR34(tags, tagsNegative, pageNumber) {
     while (container.hasChildNodes()) {// Remove old content
         container.removeChild(container.firstChild);
     }
+    console.log('https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&limit=50&pid=' + pageNumber + '&tags=' + tags + "+" + tagsNegative)
     fetch('https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&limit=50&pid=' + pageNumber + '&tags=' + tags + "+" + tagsNegative)
         .then(response => {
             return response.text(); // Get the raw response as text
@@ -147,3 +170,4 @@ function getR34(tags, tagsNegative, pageNumber) {
             }
         })
 }
+
