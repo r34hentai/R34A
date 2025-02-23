@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Scroll Posts</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: black;}
+        .container { position: relative; height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; }
+        .post { width: 99vw; height: 100vh; display: flex; justify-content: center; align-items: center; scroll-snap-align: start; }
+        img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        video { max-width: 100%; max-height: 100%; object-fit: contain; }
+        
+
+        /* Style for the collapsible button */
+        .collapsible {
+            background-color: black;
+            color: #cccccc;
+            padding: 10px;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+            font-size: 15px;
+            position: relative; /* To position the arrow inside the button */
+        }
+
+        /* Position the down arrow */
+        .arrow {
+            position: absolute;
+            left: 1px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        /* Style for the collapsible content */
+        .content {
+            position: absolute;
+            padding: 10px;
+            display: none;
+            overflow: hidden;
+            background-color: #cccccc;
+            width: 250px;
+            z-index: 100; /* Ensures the content stays above other elements */
+            border-radius: 8px; /* Adds rounded corners */
+            border: 2px solid black; /* Adds a light gray border */
+        }
+
+        /* Style for text inputs */
+        .content input {
+            display: block;
+            width: 220px;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+
+    </style>
+</head>
+<body>
+    <button class="collapsible">
+        <span class="arrow">&#9660;</span>
+    </button>
+    <div class="content">
+        <input type="text" placeholder="search" id="search">
+        <input type="text" placeholder="searchNegative" id="searchNegative">
+        <button id="start">Start</button>
+    </div>
+    <div class="container" id="postContainer"></div>
+    <script>
+        const container = document.getElementById("postContainer");
+        let posts = [];
+        let observer;
+        let viewedPosts = [];
+        let seenPostIds = new Set();
+        let lastPostIndex = 0;
+
+        const collapsible = document.querySelector(".collapsible");
+        const arrow = document.querySelector(".arrow");
+        const content = document.querySelector(".content");
+
+        // Get presets
+        var PresetW
+        var PresetS
+        fetch('./BLPreset.json')
+        .then(response => {
+            return response.json(); // Parse the JSON data
+        })
+        .then(data => {
+            PresetW = data.W
+            PresetS = data.S
+        })
+
+        // search Tags logic
+        var tags = ""
+        var search = document.getElementById('search');
+        search.addEventListener('change', function (event) {
+            const input = search.value;
+
+            // Match groupings with parentheses as a single unit
+            const regex = /\([^)]*\)|\S+/g;
+
+            // Find matches, preserving groupings and replacing spaces outside parentheses with '+'
+            const matches = input.match(regex);
+            if (matches) {
+                tags = matches.map(tag => tag.trim()).join('+');
+            }
+        });
+        // Blacklist tags Logic
+        function negativeTagsLogic(){
+            if (searchNegative.value) {
+                if(searchNegative.value == "W"){
+                    tagsNegative = PresetW;
+                } else if (searchNegative.value == "S"){
+                    tagsNegative = PresetS;
+                } else{
+                    tagsNegative = searchNegative.value;
+                }
+                searchNegative.value = tagsNegative;
+                tagsNegative = tagsNegative.split(' ') // Split the string by spaces
+                        .map(word => `-${word}`) // Prefix each word with '-'
+                        .join('+'); // Join the words with a '+'
+            } else {
+                tagsNegative = ""
+            }
+        }
+        var searchNegative = document.getElementById('searchNegative');
+        negativeTagsLogic()
+        searchNegative.addEventListener('change', function (event) {
+            negativeTagsLogic()
+        });
+
+        // Toggle the display of the content and the arrow when the button is clicked
+        collapsible.addEventListener("click", function() {
+            this.classList.toggle("active");
+            
+            // Toggle content visibility
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                arrow.style.transform = "translateY(-50%)"; // Down arrow
+            } else {
+                content.style.display = "block";
+                arrow.style.transform = "translateY(-50%) rotate(180deg)"; // Up arrow
+            }
+        });
+
+
+
+        async function fetchPosts() {
+            let response = await fetch("https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&json=1&limit=10&tags=sort:random+score:>50+" + tags + "+" + tagsNegative + "&_=" + new Date().getTime());
+            let data = await response.json();
+            return data.filter(post => !seenPostIds.has(post.id));
+        }
+
+        async function loadMorePosts() {
+            let newPosts = await fetchPosts();
+            if (newPosts.length > 0) {
+                newPosts.forEach(post => seenPostIds.add(post.id));
+                posts = posts.concat(newPosts);
+                renderPosts();
+            }
+        }
+
+        function renderPosts() {
+            // Remove old posts beyond last 5 viewed
+            while (viewedPosts.length > 5) {
+                let oldIndex = viewedPosts.shift();
+                let oldPost = document.getElementById(`post-${oldIndex}`);
+                if (oldPost) oldPost.remove();
+            }
+            
+            // Render new posts
+            posts.slice(lastPostIndex).forEach((post, i) => {
+                let index = lastPostIndex + i;
+                let postDiv = document.createElement("div");
+                postDiv.className = "post";
+                postDiv.id = `post-${index}`;
+                
+                let mediaElement;
+                if (post.file_url.endsWith('.mp4')) {
+                    // If the post is a video
+                    mediaElement = document.createElement("video");
+                    mediaElement.src = post.file_url;
+                    mediaElement.loop = true;  // Optional: to loop the video
+                    mediaElement.controls = true;  // Optional: show video controls
+                    mediaElement.load();  // Load the video but don't autoplay
+                } else {
+                    // If the post is an image
+                    mediaElement = document.createElement("img");
+                    mediaElement.src = post.file_url;
+                }
+
+                postDiv.appendChild(mediaElement);
+                container.appendChild(postDiv);
+                observePost(postDiv, index);
+            });
+            lastPostIndex = posts.length;
+        }
+
+        function observePost(postElement, postIndex) {
+            if (!observer) {
+                observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            let viewedIndex = parseInt(entry.target.id.split('-')[1]);
+                            if (!viewedPosts.includes(viewedIndex)) {
+                                viewedPosts.push(viewedIndex);
+                            }
+                            // Play video if it is in view
+                            let videoElement = entry.target.querySelector("video");
+                            if (videoElement && !videoElement.playing) {
+                                videoElement.play();
+                            }
+                            if (viewedIndex + 3 >= posts.length) {
+                                loadMorePosts();
+                            }
+                        } else {
+                            // Pause video if it goes out of view
+                            let videoElement = entry.target.querySelector("video");
+                            if (videoElement) {
+                                videoElement.pause();
+                            }
+                        }
+                    });
+                }, { threshold: 0.5 });
+            }
+            observer.observe(postElement);
+        }
+        var start = document.getElementById('start');
+        start.addEventListener("click", function() {
+            loadMorePosts();
+            start.remove();
+        })
+    </script>
+</body>
+</html>
