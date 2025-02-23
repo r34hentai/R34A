@@ -1,0 +1,141 @@
+*{
+    margin: 0;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+body{
+    background: linear-gradient(to bottom right, #41003e, #520000);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Top bar / Tags inputs / R34A-logo */
+#topBar{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.4vh;
+}
+#topBar div{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+}
+#topBar div h2{
+    margin-top: 0.16vh;
+}
+#search, #searchNegative{
+    width: 43vw;
+    margin: 0 0.5vw 0 0.5vw;
+    text-align: left;
+    color: black;
+}
+#imgDiv{
+    display: flex;
+    justify-content: center;
+}
+#imgDiv img{
+    height: 50px;
+    margin-top: 0.16vh;
+}
+
+/* Js created elements */
+/* Those that ends with "mobile" are used instead of the ones without, if the user is on mobile */
+#container{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+.appendDiv{
+    display: flex;
+    margin: 15px;
+}
+.appendDivmobile{
+    display: flex;
+    margin: 15px;
+    margin-left: 0;
+}
+.img{
+    height: 400px;
+}
+.video{
+    height: 400px;
+}
+.imgmobile{
+    width: 100vw;
+    height: auto;
+    object-fit: fill;
+}
+.videomobile{
+    width: 100vw;
+    height: auto;
+    object-fit: fill;
+}
+
+/* Page selector panel in the down-left corner */
+#pageNumberDiv {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    margin: 0.5vw;
+    background-color: black;
+    border: 1px solid white;
+    display: flex;
+    align-items: center;
+    padding: 5px;
+    gap: 5px;
+}
+#pageNumberDiv input {
+    color: black;
+    width: 50px;
+    text-align: center;
+    border: 0;
+}
+#increaseButton, #decreaseButton {
+    background-color: black;
+    color: white;
+    border: 0;
+    cursor: pointer;
+    font-size: 16px;
+    width: 30px;
+    height: 30px;
+    text-align: center;
+}
+
+#loading {
+    position: fixed;
+    bottom: 47px;
+    right: 0;
+    margin: 0.5vw;
+}
+#spinner {
+    width: 20px;
+    height: 20px;
+    border: 5px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Hides up/down arrows (spinners) on page box */
+/* for chrome */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0; /* Optional: Removes any margin that might cause visual artifacts */
+}
+/* for firefox */
+input[type=number] {
+    -moz-appearance:textfield; /* Firefox */
+}
+
+#version {
+    margin-top: auto; /* Pushes it to the bottom */
+    font-size: 13px;
+}
