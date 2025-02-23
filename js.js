@@ -18,7 +18,7 @@ if (isMobile()) {
 
 // Get presets
 var PresetW
-var PresetW
+var PresetS
 fetch('./BLPreset.json')
 .then(response => {
     return response.json(); // Parse the JSON data
@@ -60,7 +60,6 @@ function negativeTagsLogic(){
     } else {
         tagsNegative = ""
     }
-    console.log(tagsNegative)
 }
 var searchNegative = document.getElementById('searchNegative');
 negativeTagsLogic()
@@ -95,79 +94,74 @@ decreaseButton.addEventListener('click', function() {
 });
 
 // Creates content from url and is modified depending on file type and user device
-function containerElements(fileUrl, type, mob){
-    file = document.createElement(type);
-    file.src = fileUrl;
-    if (type=="video"){
-        file.controls = true;
-    }
+async function containerElements(fileUrl, type, mob) {
+    return new Promise((resolve) => {
+        let file;
 
-    if (mob){
-        file.setAttribute('class', type+mob);
-    }else{
-        file.setAttribute('class', type);
-    }
+        if (type === "video") {
+            file = document.createElement("video");
+            file.controls = true;
+            file.oncanplaythrough = () => resolve(); // Wait for the video to be ready to play
 
-    div = document.createElement('div');
-    if (mob){
-        div.setAttribute('class', 'appendDiv'+mob);
-    }else{
-        div.setAttribute('class', 'appendDiv');
-    }
+            let source = document.createElement("source");
+            source.src = fileUrl;
+            source.type = "video/" + fileUrl.split('.').pop(); // Extracts the file extension
+            file.appendChild(source);
+        } else {
+            file = document.createElement(type);
+            file.src = fileUrl;
+            file.onload = () => resolve(); // Wait for the image to fully load
+        }
 
-    if (!mob&&type=="img"){
-        aTag = document.createElement("a");
-        aTag.href = fileUrl;
-        //aTag.target = "_blank"; // Optional: open in a new tab
-        aTag.appendChild(file);
-        div.appendChild(aTag);
-    }else{
-        div.appendChild(file);
-    }
-    container.appendChild(div);
+        if (mob) {
+            file.setAttribute("class", type + mob);
+        } else {
+            file.setAttribute("class", type);
+        }
+
+        let div = document.createElement("div");
+        div.setAttribute("class", mob ? "appendDiv" + mob : "appendDiv");
+
+        if (!mob && type === "img") {
+            let aTag = document.createElement("a");
+            aTag.href = fileUrl;
+            aTag.appendChild(file);
+            div.appendChild(aTag);
+        } else {
+            div.appendChild(file);
+        }
+
+        container.appendChild(div);
+    });
 }
 
-// Uses api to get and create images and or videos
-function getR34(tags, tagsNegative, pageNumber) {
-    while (container.hasChildNodes()) {// Remove old content
+async function getR34(tags, tagsNegative, pageNumber) {
+    const loadingIcon = document.getElementById("loading");
+    loadingIcon.style.display = "block"; // Show loading icon
+
+    while (container.hasChildNodes()) {
         container.removeChild(container.firstChild);
     }
-    console.log('https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&limit=50&pid=' + pageNumber + '&tags=' + tags + "+" + tagsNegative)
+
     fetch('https://api.rule34.xxx/index.php?page=dapi&s=post&q=index&limit=50&pid=' + pageNumber + '&tags=' + tags + "+" + tagsNegative)
-        .then(response => {
-            return response.text(); // Get the raw response as text
-        })
-        .then(xmlString => {
-            // Parse the raw XML string into an XML document
+        .then(response => response.text())
+        .then(async xmlString => {
             const parser = new DOMParser();
             const xmlDoc = parser.parseFromString(xmlString, "application/xml");
-
-            // Extract 'post' elements from the XML
             const posts = xmlDoc.getElementsByTagName('post');
+
             for (let i = 0; i < posts.length; i++) {
-                const fileUrl = posts[i].getAttribute('file_url'); // Get the file_url attribute
+                const fileUrl = posts[i].getAttribute('file_url');
                 if (fileUrl) {
-                    // Get the file extension from the URL
                     const fileExtension = fileUrl.substring(fileUrl.lastIndexOf('.')).toLowerCase();
 
-                    // Check if the URL leads to an image
                     if (imageExtensions.includes(fileExtension)) {
-                        if (mobile){
-                            containerElements(fileUrl,"img","mobile")
-                        }else{
-                            containerElements(fileUrl,"img")
-                        }
-                    }
-                    // Check if the URL leads to a video
-                    else if (videoExtensions.includes(fileExtension)) {
-                        if (mobile){
-                            containerElements(fileUrl,"video","mobile")
-                        }else{
-                            containerElements(fileUrl,"video")
-                        }
+                        await containerElements(fileUrl, "img", mobile ? "mobile" : "");
+                    } else if (videoExtensions.includes(fileExtension)) {
+                        await containerElements(fileUrl, "video", mobile ? "mobile" : "");
                     }
                 }
             }
-        })
+            loadingIcon.style.display = "none"; // Hide loading icon when the last element is loaded
+        });
 }
-

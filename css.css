@@ -5,22 +5,28 @@
 }
 body{
     background: linear-gradient(to bottom right, #41003e, #520000);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 /* Top bar / Tags inputs / R34A-logo */
 #topBar{
     display: flex;
     justify-content: space-between;
+    margin-top: 0.4vh;
 }
 #topBar div{
     display: flex;
     align-items: center;
     flex-direction: column;
 }
+#topBar div h2{
+    margin-top: 0.16vh;
+}
 #search, #searchNegative{
-    margin: 5px 0px 5px 0px;
     width: 43vw;
-    margin: 0.5vw;
+    margin: 0 0.5vw 0 0.5vw;
     text-align: left;
     color: black;
 }
@@ -30,7 +36,7 @@ body{
 }
 #imgDiv img{
     height: 50px;
-    margin-top: 0.16vw;
+    margin-top: 0.16vh;
 }
 
 /* Js created elements */
@@ -66,12 +72,6 @@ body{
     object-fit: fill;
 }
 
-/* A temporary div so that the background gradient is correct when the site is loaded */
-#temp{
-    height: 90.5vh;
-    width: 98vW;
-}
-
 /* Page selector panel in the down-left corner */
 #pageNumberDiv {
     position: fixed;
@@ -102,6 +102,26 @@ body{
     text-align: center;
 }
 
+#loading {
+    position: fixed;
+    bottom: 47px;
+    right: 0;
+    margin: 0.5vw;
+}
+#spinner {
+    width: 20px;
+    height: 20px;
+    border: 5px solid #ccc;
+    border-top-color: #333;
+    border-radius: 50%;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 /* Hides up/down arrows (spinners) on page box */
 /* for chrome */
 input[type="number"]::-webkit-inner-spin-button,
@@ -113,4 +133,9 @@ input[type="number"]::-webkit-outer-spin-button {
 /* for firefox */
 input[type=number] {
     -moz-appearance:textfield; /* Firefox */
+}
+
+#version {
+    margin-top: auto; /* Pushes it to the bottom */
+    font-size: 14px;
 }
